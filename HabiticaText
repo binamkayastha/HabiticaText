@@ -1,3 +1,26 @@
-#!/bin/bash
+#!/usr/bin/bash
 
-echo "Hello World"
+# Save API keys in variables from APIKeys file.
+user_id=`grep User_ID APIKeys | cut -d: -f2 | tr -d '[[:space:]]';`
+api_token=`grep API_Token APIKeys | cut -d: -f2 | tr -d '[[:space:]]';`
+
+user_json=$(curl https://habitica.com/api/v3/user -s -X GET --compressed -H "Content-Type:application/json" -H "x-api-user: $user_id" -H "x-api-key: $api_token" | json_pp)
+
+#Function -  (json, json or value Object). NVM, just use jq
+tasks_json=$(jq '.data.tasksOrder' <<< "$user_json")
+todos_json=$(jq '.data.tasksOrder.todos' <<< "$user_json")
+
+#Take todos_json, get rid of [], then make it an array
+readarray -t todos_ids <<< "$(tr -d '"' <<< "$(jq '.[]' <<< "$todos_json")")"
+
+#todos_names=$(curl https://habitica.com/api/v3/tasks/${todos_ids[0]} -s -X GET --compressed -H "Content-Type:application/json" -H "x-api-user: $user_id" -H "x-api-key: $api_token" | json_pp)
+
+todos_names=()
+for todo_id in ${todos_ids[@]}; do
+    #echo "curl https://habitica.com/api/v3/tasks/$todo_id -s -X GET --compressed -H "Content-Type:application/json" -H "x-api-user: $user_id" -H "x-api-key: $api_token" | json_pp"
+    todos_names+=("$(jq '.data.text' <<< $(curl https://habitica.com/api/v3/tasks/$todo_id -s -X GET --compressed -H "Content-Type:application/json" -H "x-api-user: $user_id" -H "x-api-key: $api_token" | json_pp))")
+done
+
+
+printf '%s\n' "${todos_names[@]}"
+#printf 'ID:%s\n' "${todos_ids[0]}"

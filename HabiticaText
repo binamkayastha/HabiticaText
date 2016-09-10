@@ -1,4 +1,5 @@
 #!/usr/bin/bash
+#Dependencies, jq, dwdiff
 
 # Save API keys in variables from APIKeys file.
 user_id=`grep User_ID APIKeys | cut -d: -f2 | tr -d '[[:space:]]';`
@@ -21,6 +22,13 @@ for todo_id in ${todos_ids[@]}; do
     todos_names+=("$(jq '.data.text' <<< $(curl https://habitica.com/api/v3/tasks/$todo_id -s -X GET --compressed -H "Content-Type:application/json" -H "x-api-user: $user_id" -H "x-api-key: $api_token" | json_pp))")
 done
 
-
-printf '%s\n' "${todos_names[@]}"
+list_name="todolist.txt"
+list_backup="todolist.txt.bkp"
+#printf '%s\n' "${todos_names[@]}" > $list_name
+#nl -w1 $list_name > $list_name
+printf '%s\n' "${todos_names[@]}" | nl -ba -nln -w 1 -s ' ' > $list_name
+printf '%s\n' "${todos_names[@]}" | nl -ba -nln -w 1 -s ' ' > $list_backup
 #printf 'ID:%s\n' "${todos_ids[0]}"
+
+
+#UTF character ✓ ⨯i→➞

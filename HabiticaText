@@ -28,7 +28,53 @@ list_backup="todolist.txt.bkp"
 #nl -w1 $list_name > $list_name
 printf '%s\n' "${todos_names[@]}" | nl -ba -nln -w 1 -s ' ' > $list_name
 printf '%s\n' "${todos_names[@]}" | nl -ba -nln -w 1 -s ' ' > $list_backup
-#printf 'ID:%s\n' "${todos_ids[0]}"
+
+# Edit the Habitica list
+#   Todo: Change vim to $editor
+vim $list_name &&
+
+
+diff $list_backup $list_name > diff.txt
+sort -rV diff.txt > diffsorted.txt
+
+re_num='^[0-9]+$'
+
+declare -a arr
+
+
+while read -r line; do
+    printf 'LINE: %s\n' "$line"
+    sign=$(echo "$line" | cut -d" " -f1)
+    number="$(echo "$line" | cut -d" " -f2)"
+    if [ "$sign" == ">" -o "$sign" == "<" ] && [[ $number =~ $re_num  ]]; then
+        if [ "$sign" == ">" ]; then
+            arr+=($number" 10");
+            printf " ArrLength>: %s\n" "${#arr[@]}"
+        elif [ "$sign" == "<" ]; then
+            isChange=0;
+            printf " ArrLength<: %s\n" "${#arr[@]}"
+            for i in "${!arr[@]}"
+            do
+                printf "  Index: %s  and ArrAtPoint: %s\n" "$i" "$arr[$i]"
+
+                if [ "$number" -eq "$(cut -d" " -f1 <<< $arr[$i])" ]; then
+                    printf "   Number<: %s equal to arr>: %s\n" $number "$arr[$i]"
+                    #printf "Number<: %s equal to arr>: %s\n" $number "$(cut -d" " -f1 <<< $arr[$i])"
+                    printf '   Before:%s\n' "${arr[@]}"
+                    printf "    Index to change: %s\n" "$i"
+                    arr[$i]=$number" 11";
+                    printf '   After:%s\n' "${arr[@]}"
+                    isChange=1;
+                fi
+            done
+            if [ "$isChange" == "0" ]; then
+                arr+=($number" 01");
+            fi
+        fi
+    fi
+done < diffsorted.txt
+
+printf '%s\n' "${arr[@]}";
 
 
 #UTF character ✓ ⨯i→➞
